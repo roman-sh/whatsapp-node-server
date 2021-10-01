@@ -26,7 +26,15 @@ if (fs.existsSync(SESSION_FILE_PATH)) {
 
 // Use the saved values
 const client = new Client({
-  session: sessionData
+  session: sessionData,
+  puppeteer: {
+    headless: true,
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--unhandled-rejections=strict'
+    ]
+  }
 })
 
 // Save session values to the file upon successful auth
