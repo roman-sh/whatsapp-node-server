@@ -110,7 +110,7 @@ let sessionData
 
   app.post('/api', (req, res) => {
     const { message, image } = req.body
-    console.log(message)
+    console.log(`${message}\ncontains image: ${!!image}`)
     if (image) {
       const media = new MessageMedia(image.type, image.data)
       client.sendMessage(chatId, media, { caption: message })
