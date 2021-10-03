@@ -16,9 +16,7 @@ app.listen(port, () => {
 
 ////////////////////////////////////////////////////////////////
 
-const AWS_ID = process.env.AWS_ID
-const AWS_SECRET = process.env.AWS_SECRET
-const BUCKET_NAME = 'whatsapp-node-server-s3-bucket'
+const { AWS_ID, AWS_SECRET, BUCKET_NAME } = process.env
 const FILE_NAME = 'session.json'
 
 const s3 = new AWS.S3({
@@ -97,11 +95,18 @@ let sessionData
     console.log('Client is ready!')
   })
 
+  client.on('message', message => {
+    console.log(message.body)
+    if(message.body === 'ping') {
+      message.reply('pong')
+    }
+  })
+
   client.initialize()
 
   ////////////////////////////////////////////////////////////////
 
-  const chatId = '972546313551' + '@c.us'
+  const chatId = process.env.PHONE.replace('+', '') + '@c.us'
 
   app.post('/api', (req, res) => {
     const { message, image } = req.body
