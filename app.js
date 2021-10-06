@@ -3,16 +3,20 @@ const { Client, MessageMedia } = require('whatsapp-web.js')
 const express = require('express')
 const AWS = require('aws-sdk')
 const Heroku = require('heroku-client')
+const raygun = require('raygun')
 
+
+const raygunClient = new raygun.Client().init({apiKey: process.env.RAYGUN_APIKEY})
+const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
 
 ;(async () => {
-  const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
 
   try {
     const app = express()
     const port = process.env.PORT
 
     app.use(express.json({ limit: '50mb' }))
+    app.use(raygunClient.expressHandler)
 
     app.listen(port, () => {
       console.log(`App listening at http://localhost:${port}`)
@@ -127,6 +131,8 @@ const Heroku = require('heroku-client')
   }
   catch (e) {
     console.error(e)
+    console.log('Error, app will restart in 1 hour')
+    await new Promise(r => setTimeout(r, 3600000))
     heroku.delete('/apps/whatsapp-node-server/dynos')
   }
   
