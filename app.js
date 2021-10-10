@@ -42,7 +42,7 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
       }
       try {
         await s3.upload(params).promise()
-        console.log('"session.json" stored')
+        console.log('Session stored')
       } catch (e) {
         console.log(e)
       }
@@ -61,19 +61,19 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
 
     let sessionData
 
-    console.log('Checking if "session.json" exists...')
+    console.log('Checking session')
     const params = {
       Bucket: BUCKET_NAME,
       Key: FILE_NAME
     }
     try {
       await s3.headObject(params).promise()
-      console.log('"session.json" found')
+      console.log('Session found')
       sessionData = await getFile()
     }
     catch (e) {
       if (e.code === 'NotFound') {
-        console.log('"session.json" not found')
+        console.log('Session not found')
       }
     }
 
@@ -116,7 +116,7 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
 
     ////////////////////////////////////////////////////////////////
 
-    cron.schedule('0 * * * *', () => {
+    cron.schedule('30 * * * *', () => {
       console.log('Running cron task -> check client status')
       if (!client.info) {
         console.error('Client is not defined, restarting the app')
@@ -124,10 +124,18 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
       }
     }).start()
 
-    cron.schedule('* 22 * * *', async () => {
+    
+    cron.schedule(`0 ${process.env.KEEPALIVE_HOUR} * * *`, async () => {
       if (process.env.KEEPALIVE_PHONE) {
         console.log('Running cron task -> send keepalive message')
-        const { content } = await axios('https://api.quotable.io/random')
+        let content
+        try {
+          const quotable = await axios('https://api.quotable.io/random')
+          content = quotable.data.content
+        }
+        catch (e) {
+          content = e.message
+        }
         const chatId = process.env.KEEPALIVE_PHONE.replace('+', '') + '@c.us'
         client.sendMessage(chatId, content)
       }
