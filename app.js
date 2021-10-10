@@ -4,6 +4,8 @@ const express = require('express')
 const AWS = require('aws-sdk')
 const Heroku = require('heroku-client')
 const raygun = require('raygun')
+const cron = require('node-cron')
+const axios = require('axios')
 
 
 const raygunClient = new raygun.Client().init({apiKey: process.env.RAYGUN_APIKEY})
@@ -90,6 +92,7 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
 
     // Save session values to the file upon successful auth
     client.on('authenticated', session => {
+      console.log('Client is authenticated')
       sessionData = session
       uploadFile(JSON.stringify(session))
     })
@@ -99,7 +102,7 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
     })
 
     client.on('ready', () => {
-      console.log('Client is ready!')
+      console.log('CLIENT IS READY!')
     })
 
     client.on('message', message => {
@@ -110,6 +113,27 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
     })
 
     client.initialize()
+
+    ////////////////////////////////////////////////////////////////
+
+    cron.schedule('0 * * * *', () => {
+      console.log('Running cron task -> check client status')
+      if (!client.info) {
+        console.error('Client is not defined, restarting the app')
+        heroku.delete('/apps/whatsapp-node-server/dynos')
+      }
+    }).start()
+
+    cron.schedule('* 22 * * *', async () => {
+      if (process.env.KEEPALIVE_PHONE) {
+        console.log('Running cron task -> send keepalive message')
+        const { content } = await axios('https://api.quotable.io/random')
+        const chatId = process.env.KEEPALIVE_PHONE.replace('+', '') + '@c.us'
+        client.sendMessage(chatId, content)
+      }
+    }, {
+      timezone: "Asia/Jerusalem"
+    }).start()
 
     ////////////////////////////////////////////////////////////////
 
