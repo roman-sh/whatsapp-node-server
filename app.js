@@ -131,7 +131,7 @@ const heroku = new Heroku({ token: process.env.HEROKU_API_KEY })
         let content
         try {
           const quotable = await axios('https://api.quotable.io/random')
-          content = quotable.data.content
+          content = `${quotable.data.content}\n${quotable.data.author}`
         }
         catch (e) {
           content = e.message
